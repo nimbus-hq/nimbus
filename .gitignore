@@ -1,0 +1,5 @@
+create-t3-app-main
+node_modules
+dist
+t3cli
+.DS_Store
