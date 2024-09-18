@@ -1,0 +1,7 @@
+name = "nimbus-app"
+compatibility_date = "2024-07-01"
+pages_build_output_dir = "./dist"
+
+## Uncomment if you need Node compatibility
+# compatibility_flags = [ "nodejs_compat_v2" ]
+
