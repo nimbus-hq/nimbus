@@ -110,7 +110,7 @@ export const runCli = async (): Promise<CliResults> => {
                 ...cliResults.flags
             }
         }
-        
+
     } catch (err) {
         throw err;
     }
