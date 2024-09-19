@@ -6,6 +6,10 @@ import { Command } from "commander";
 import { DEFAULT_APP_NAME } from "~/consts.js";
 import { validateAppName } from "~/utils/validateAppName.js";
 import { validateImportAlias } from "~/utils/validateImportAlias.js";
+import { getUserPkgManager } from "~/utils/getUserPkgManager.js";
+import {
+    type AvailablePackages,
+  } from "~/installers/index.js";
 
 interface CliFlags {
     noGit: boolean;
@@ -29,11 +33,13 @@ interface CliFlags {
 
 interface CliResults {
     appName: string;
+    packages: AvailablePackages[];
     flags: CliFlags;
 }
 
 const defaultOptions: CliResults = {
     appName: DEFAULT_APP_NAME,
+    packages: ["tailwind"],
     flags: {
         noGit: false,
         noInstall: false,
@@ -56,10 +62,6 @@ export const runCli = async (): Promise<CliResults> => {
     program
         .name("nimbus-app")
         .description("A CLI for creating web applications with the Nimbus stack")
-        .argument(
-            "[dir]",
-            "The name of the application, as well as the name of the directory to create"
-        )
         .parse(process.argv);
 
     const cliProvidedName = program.args[0];
@@ -68,6 +70,8 @@ export const runCli = async (): Promise<CliResults> => {
     }
 
     try {
+
+        const pkgManager = getUserPkgManager();
 
         const project = await p.group(
             {
@@ -84,11 +88,25 @@ export const runCli = async (): Promise<CliResults> => {
                         message: "Will you be using Tailwind CSS for styling?",
                     });
                 },
-                trpc: () => {
-                    return p.confirm({
-                      message: "Would you like to use tRPC?",
-                    });
-                },
+                ...(!cliResults.flags.noGit && {
+                    git: () => {
+                      return p.confirm({
+                            message:
+                                "Should we initialize a Git repository and stage the changes?",
+                            initialValue: !defaultOptions.flags.noGit,
+                        });
+                    },
+                }),
+                ...(!cliResults.flags.noInstall && {
+                    install: () => {
+                        return p.confirm({
+                            message:
+                                `Should we run '${pkgManager}` +
+                                (pkgManager === "yarn" ? `' for you?` : ` install' for you?`),
+                            initialValue: !defaultOptions.flags.noInstall,
+                        });
+                    },
+                }),
                 importAlias: () => {
                     return p.text({
                         message: "What import alias would you like to use?",
@@ -100,14 +118,21 @@ export const runCli = async (): Promise<CliResults> => {
             },
             {
                 onCancel() {
-                  process.exit(1);
+                    process.exit(1);
                 },
             });
+
+            const packages: AvailablePackages[] = [];
+            if (project.styling) packages.push("tailwind");
         
         return {
             appName: project.name ?? cliResults.appName,
+            packages,
             flags: {
-                ...cliResults.flags
+                ...cliResults.flags,
+                noGit: !project.git || cliResults.flags.noGit,
+                noInstall: !project.install || cliResults.flags.noInstall,
+                importAlias: project.importAlias ?? cliResults.flags.importAlias,
             }
         }
 

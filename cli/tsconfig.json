@@ -53,5 +53,5 @@
   },
     "include": [
         "src"
-    ]
+, "../t3cli/cli/src/utils/getUserPkgManager.ts"    ]
   }
