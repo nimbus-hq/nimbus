@@ -1,4 +1,5 @@
 **/node_modules/
 **/dist/
 **/t3cli
+**/*.wrangler
 .DS_Store
